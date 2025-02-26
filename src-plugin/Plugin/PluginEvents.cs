@@ -81,7 +81,10 @@ namespace K4Arenas
 						ArenaPlayer? arenaPlayer = Arenas?.FindPlayer(player);
 						if (arenaPlayer != null)
 						{
-							arenaPlayer.CenterMessage = string.Empty;
+							AddTimer(3.0f, () => {
+								arenaPlayer.CenterMessage = string.Empty;
+							});
+							
 						}
 					}
 				}

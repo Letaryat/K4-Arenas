@@ -29,6 +29,7 @@ public class ArenaPlayer
 	public bool Loaded = false;
 	public string ArenaTag = string.Empty;
 	public string CenterMessage = string.Empty;
+	public string CenterAnnouncePlayer = string.Empty;
 
 	//** ? Settings */
 	public bool AFK = false;

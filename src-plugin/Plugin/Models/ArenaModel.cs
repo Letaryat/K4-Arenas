@@ -186,9 +186,15 @@ public class Arena
 				if (!player.Controller.IsBot)
 				{
 					if (Plugin.Config.CommandSettings.CenterAnnounceMode)
+					{
 						player.CenterMessage = Localizer.ForPlayer(player.Controller, "k4.chat.arena_roundstart_html", Plugin.GetRequiredArenaName(ArenaID), ArenaID == -1 ? Localizer.ForPlayer(player.Controller, "k4.general.random") : Localizer.ForPlayer(player.Controller, RoundType.Name ?? "Missing"), Plugin.GetOpponentNames(player.Controller, opponents) ?? "Unknown");
-					else if (ArenaID != -1)
 						player.Controller.PrintToChat($" {Localizer.ForPlayer(player.Controller, "k4.general.prefix")} {Localizer.ForPlayer(player.Controller, "k4.chat.arena_roundstart", Plugin.GetRequiredArenaName(ArenaID), Plugin.GetOpponentNames(player.Controller, opponents) ?? "Unknown", Localizer.ForPlayer(player.Controller, RoundType.Name ?? "Missing"))}");
+					}
+					else if (ArenaID != -1)
+					{
+						player.Controller.PrintToChat($" {Localizer.ForPlayer(player.Controller, "k4.general.prefix")} {Localizer.ForPlayer(player.Controller, "k4.chat.arena_roundstart", Plugin.GetRequiredArenaName(ArenaID), Plugin.GetOpponentNames(player.Controller, opponents) ?? "Unknown", Localizer.ForPlayer(player.Controller, RoundType.Name ?? "Missing"))}");
+					}
+
 				}
 
 				if (Plugin.gameRules?.WarmupPeriod == true)
