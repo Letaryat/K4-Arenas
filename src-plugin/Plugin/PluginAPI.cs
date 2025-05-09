@@ -3,9 +3,10 @@ namespace K4Arenas
 	using CounterStrikeSharp.API;
 	using CounterStrikeSharp.API.Core;
 	using CounterStrikeSharp.API.Core.Capabilities;
-	using CounterStrikeSharp.API.Modules.Utils;
-	using K4Arenas.Models;
-	using K4ArenaSharedApi;
+    using CounterStrikeSharp.API.Modules.Entities.Constants;
+    using CounterStrikeSharp.API.Modules.Utils;
+    using K4Arenas.Models;
+    using K4ArenaSharedApi;
 
 	public sealed partial class Plugin : BasePlugin
 	{
@@ -29,6 +30,18 @@ namespace K4Arenas
 		{
 			return RoundType.AddSpecialRoundType(name, teamSize, enabledByDefault, startFunction, endFunction);
 		}
+
+		public Dictionary<WeaponType, CsItem?> GetPlayerWeaponPreferences(CCSPlayerController player)
+		{
+            var arenaPlayer = plugin.Arenas?.FindPlayer(player);
+
+            if (arenaPlayer == null)
+            {
+				return new Dictionary<WeaponType, CsItem?>();
+            }
+
+            return arenaPlayer.WeaponPreferences;
+        }
 
 		public void RemoveSpecialRound(int id)
 		{
