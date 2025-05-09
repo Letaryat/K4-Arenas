@@ -23,7 +23,7 @@
       <Private>false</Private>
     </Reference>
     <Reference Include="KitsuneMenu">
-      <HintPath>/Users/sples/Projects/CS2_Random/Menu-main/src/bin/KitsuneMenu/shared/KitsuneMenu/KitsuneMenu.dll</HintPath>
+      <HintPath>C:\Users\letar\source\repos\libs\KitsuneMenu\KitsuneMenu.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
