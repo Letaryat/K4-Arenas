@@ -89,17 +89,26 @@ namespace K4Arenas
 			}
 		}
 
-        public Dictionary<WeaponType, CsItem?> GetPlayerWeaponPreferences(CCSPlayerController player)
+        public Dictionary<string, CsItem?> GetPlayerWeaponPreferences(CCSPlayerController player)
         {
             var arenaPlayer = plugin.Arenas?.FindPlayer(player);
 
             if (arenaPlayer == null)
             {
-                return new Dictionary<WeaponType, CsItem?>();
+                return new Dictionary<string, CsItem?>(); // lub z domyœlnymi nullami jak ni¿ej
             }
 
-            return arenaPlayer.WeaponPreferences;
-        }
+            var playerWeapons = new Dictionary<string, CsItem?>()
+			{
+                { "Rifle", arenaPlayer.WeaponPreferences[WeaponType.Rifle] },
+                { "Sniper", arenaPlayer.WeaponPreferences[WeaponType.Sniper] },
+                { "SMG", arenaPlayer.WeaponPreferences[WeaponType.SMG] },
+                { "LMG", arenaPlayer.WeaponPreferences[WeaponType.LMG] },
+                { "Shotgun", arenaPlayer.WeaponPreferences[WeaponType.Shotgun] },
+                { "Pistol", arenaPlayer.WeaponPreferences[WeaponType.Pistol] },
+            };
 
+			return playerWeapons;
+        }
     }
 }
