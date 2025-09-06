@@ -11,6 +11,7 @@ namespace K4Arenas
 	public sealed partial class Plugin : BasePlugin
 	{
 		private int lastRealPlayers = 0;
+
 		public void Initialize_Events()
 		{
 			RegisterListener<Listeners.OnMapStart>((mapName) =>
@@ -26,7 +27,7 @@ namespace K4Arenas
 					CheckCommonProblems();
 
 					gameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").First().GameRules;
-
+					
 					foreach (CCSPlayerController player in Utilities.GetPlayers().Where(x => x?.IsValid == true && !x.IsHLTV && x.Connected == PlayerConnectedState.PlayerConnected && !x.IsBot))
 					{
 						if (Arenas.FindPlayer(player) == null)
@@ -370,6 +371,15 @@ namespace K4Arenas
 			RegisterEventHandler((EventRoundStart @event, GameEventInfo info) =>
 			{
 				IsBetweenRounds = false;
+
+				if (Config.CompatibilitySettings.RefreshTagsQuicker)
+				{
+					var gameRules2 = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
+
+					if (gameRules2 is null) return HookResult.Continue;
+					gameRules2.GameRules!.NextUpdateTeamClanNamesTime = Server.CurrentTime - 0.01f;
+					Utilities.SetStateChanged(gameRules2, "CCSGameRules", "m_fNextUpdateTeamClanNamesTime");
+				}
 				return HookResult.Continue;
 			});
 
