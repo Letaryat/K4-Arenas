@@ -23,7 +23,7 @@
       <Private>false</Private>
     </Reference>
     <Reference Include="KitsuneMenu">
-      <HintPath>C:\Users\letar\source\repos\libs\KitsuneMenu\KitsuneMenu.dll</HintPath>
+      <HintPath>../kitsunemenu/KitsuneMenu.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
