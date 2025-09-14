@@ -3,16 +3,23 @@ namespace K4Arenas
 	using CounterStrikeSharp.API;
 	using CounterStrikeSharp.API.Core;
 	using CounterStrikeSharp.API.Core.Translations;
-	using CounterStrikeSharp.API.Modules.Cvars;
+    using CounterStrikeSharp.API.Modules.Commands;
+    using CounterStrikeSharp.API.Modules.Cvars;
 	using CounterStrikeSharp.API.Modules.Timers;
 	using CounterStrikeSharp.API.Modules.Utils;
 	using K4Arenas.Models;
+	using Microsoft.Extensions.Logging;
 
 	public sealed partial class Plugin : BasePlugin
 	{
 		private int lastRealPlayers = 0;
 		public void Initialize_Events()
 		{
+			AddCommandListener("changelevel", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("map", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("host_workshop_map", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("ds_workshop_changelevel", ListenerChangeLevel, HookMode.Pre);
+
 			RegisterListener<Listeners.OnMapStart>((mapName) =>
 			{
 				Task.Run(PurgeDatabaseAsync);
@@ -63,11 +70,24 @@ namespace K4Arenas
 
 			RegisterListener<Listeners.OnMapEnd>(() =>
 			{
-				Arenas?.Clear();
-				Arenas = null;
+				try
+				{
+					Arenas?.Clear();
+					Arenas = null;
 
-				WaitingArenaPlayers.Clear();
-				IsBetweenRounds = false;
+					WaitingArenaPlayers.Clear();
+					IsBetweenRounds = false;
+
+					gameRules = null;
+					Challenges.Clear();
+					lastRealPlayers = 0;
+					WarmupTimer?.Kill();
+				}
+				catch (Exception error)
+				{
+					Logger.LogInformation($"[OnMapEnd] {error}");
+				}
+
 			});
 
 			RegisterEventHandler((EventRoundFreezeEnd @event, GameEventInfo info) =>
@@ -288,8 +308,11 @@ namespace K4Arenas
 
 						if (!Config.CompatibilitySettings.DisableClantags)
 						{
+							UpdatePlayerName(player.Controller, player.Controller.PlayerName, player.ArenaTag);
+							/*
 							player.Controller.Clan = player.ArenaTag;
 							Utilities.SetStateChanged(player.Controller, "CCSPlayerController", "m_szClan");
+							*/
 						}
 
 						WaitingArenaPlayers.Enqueue(player);
@@ -354,8 +377,11 @@ namespace K4Arenas
 
 					if (!Config.CompatibilitySettings.DisableClantags)
 					{
+						UpdatePlayerName(arenaPlayer.Controller, arenaPlayer.Controller.PlayerName, arenaPlayer.ArenaTag);
+						/*
 						arenaPlayer.Controller.Clan = arenaPlayer.ArenaTag;
 						Utilities.SetStateChanged(arenaPlayer.Controller, "CCSPlayerController", "m_szClan");
+						*/
 					}
 
 					if (arenaPlayer.PlayerIsSafe)
@@ -435,8 +461,11 @@ namespace K4Arenas
 
 					if (!Config.CompatibilitySettings.DisableClantags)
 					{
+						UpdatePlayerName(arenaPlayer.Controller, arenaPlayer.Controller.PlayerName, arenaPlayer.ArenaTag);
+						/*
 						player.Clan = arenaPlayer.ArenaTag;
 						Utilities.SetStateChanged(player, "CCSPlayerController", "m_szClan");
+						*/
 					}
 
 					player!.ChangeTeam(CsTeam.Spectator);
@@ -452,8 +481,11 @@ namespace K4Arenas
 
 					if (!Config.CompatibilitySettings.DisableClantags)
 					{
+						UpdatePlayerName(arenaPlayer.Controller, arenaPlayer.Controller.PlayerName, arenaPlayer.ArenaTag);
+						/*
 						arenaPlayer.Controller.Clan = arenaPlayer.ArenaTag;
 						Utilities.SetStateChanged(arenaPlayer.Controller, "CCSPlayerController", "m_szClan");
+						*/
 					}
 
 					player.PrintToChat($" {Localizer.ForPlayer(player, "k4.general.prefix")} {Localizer.ForPlayer(player, "k4.chat.afk_disabled")}");
@@ -468,6 +500,34 @@ namespace K4Arenas
 				info.DontBroadcast = true;
 				return HookResult.Changed;
 			}, HookMode.Pre);
+
+
 		}
-	}
+
+        private HookResult ListenerChangeLevel(CCSPlayerController? player, CommandInfo commandInfo)
+        {
+			try
+			{
+				WarmupTimer?.Kill();
+				WarmupTimer = null;
+
+				Arenas?.Clear();
+				Arenas = null;
+
+
+				Challenges.Clear();
+
+
+				WaitingArenaPlayers.Clear();
+				IsBetweenRounds = false;
+
+				gameRules = null;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[K4-Arenas] Error in OnMapEnd: {ex.Message}");
+			}
+			return HookResult.Continue;
+        }
+    }
 }
