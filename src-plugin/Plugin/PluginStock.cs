@@ -356,5 +356,66 @@ namespace K4Arenas
 				queue = new Queue<ArenaPlayer>(list);
 			}
 		}
+
+		public void UpdatePlayerName(CCSPlayerController player, string name, string? tag = null)
+		{
+			if (player == null || player.IsBot)
+			{
+				return;
+			}
+
+			if (player.PlayerName != name)
+			{
+				player.PlayerName = name;
+				CounterStrikeSharp.API.Utilities.SetStateChanged(
+					player,
+					"CBasePlayerController",
+					"m_iszPlayerName"
+				);
+			}
+
+			if (tag != null)
+			{
+				tag = $"[{tag.Trim()}]";
+			}
+
+			if (tag != null && player.Clan != tag)
+			{
+				player.Clan = tag;
+				player.ClanName = tag;
+
+				CounterStrikeSharp.API.Utilities.SetStateChanged(
+					player,
+					"CCSPlayerController",
+					"m_szClan"
+				);
+				CounterStrikeSharp.API.Utilities.SetStateChanged(
+					player,
+					"CCSPlayerController",
+					"m_szClanName"
+				);
+
+				var gameRules = CounterStrikeSharp
+					.API.Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules")
+					.FirstOrDefault();
+
+				if (gameRules is null)
+				{
+					return;
+				}
+
+				gameRules.GameRules!.NextUpdateTeamClanNamesTime = Server.CurrentTime - 0.01f;
+				CounterStrikeSharp.API.Utilities.SetStateChanged(
+					gameRules,
+					"CCSGameRules",
+					"m_fNextUpdateTeamClanNamesTime"
+				);
+			}
+
+			// force the client to update the player name
+			new EventNextlevelChanged(false).FireEventToClient(player);
+		}
+
+
 	}
 }

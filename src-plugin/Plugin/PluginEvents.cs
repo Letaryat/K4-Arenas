@@ -3,6 +3,7 @@ namespace K4Arenas
 	using CounterStrikeSharp.API;
 	using CounterStrikeSharp.API.Core;
 	using CounterStrikeSharp.API.Core.Translations;
+	using CounterStrikeSharp.API.Modules.Commands;
 	using CounterStrikeSharp.API.Modules.Cvars;
 	using CounterStrikeSharp.API.Modules.Timers;
 	using CounterStrikeSharp.API.Modules.Utils;
@@ -14,6 +15,12 @@ namespace K4Arenas
 
 		public void Initialize_Events()
 		{
+
+			AddCommandListener("changelevel", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("map", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("host_workshop_map", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("ds_workshop_changelevel", ListenerChangeLevel, HookMode.Pre);
+
 			RegisterListener<Listeners.OnMapStart>((mapName) =>
 			{
 				Task.Run(PurgeDatabaseAsync);
@@ -27,7 +34,7 @@ namespace K4Arenas
 					CheckCommonProblems();
 
 					gameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").First().GameRules;
-					
+
 					foreach (CCSPlayerController player in Utilities.GetPlayers().Where(x => x?.IsValid == true && !x.IsHLTV && x.Connected == PlayerConnectedState.PlayerConnected && !x.IsBot))
 					{
 						if (Arenas.FindPlayer(player) == null)
@@ -64,11 +71,23 @@ namespace K4Arenas
 
 			RegisterListener<Listeners.OnMapEnd>(() =>
 			{
-				Arenas?.Clear();
-				Arenas = null;
+				try
+				{
+					WarmupTimer?.Kill();
+					WarmupTimer = null;
 
-				WaitingArenaPlayers.Clear();
-				IsBetweenRounds = false;
+					Arenas?.Clear();
+					Arenas = null;
+
+					WaitingArenaPlayers.Clear();
+					IsBetweenRounds = false;
+
+					gameRules = null;
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"[K4-Arenas] Error in OnMapEnd: {ex.Message}");
+				}
 			});
 
 			RegisterEventHandler((EventRoundFreezeEnd @event, GameEventInfo info) =>
@@ -371,7 +390,7 @@ namespace K4Arenas
 			RegisterEventHandler((EventRoundStart @event, GameEventInfo info) =>
 			{
 				IsBetweenRounds = false;
-
+				/*
 				if (Config.CompatibilitySettings.RefreshTagsQuicker)
 				{
 					var gameRules2 = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault();
@@ -380,6 +399,7 @@ namespace K4Arenas
 					gameRules2.GameRules!.NextUpdateTeamClanNamesTime = Server.CurrentTime - 0.01f;
 					Utilities.SetStateChanged(gameRules2, "CCSGameRules", "m_fNextUpdateTeamClanNamesTime");
 				}
+				*/
 				return HookResult.Continue;
 			});
 
@@ -478,6 +498,32 @@ namespace K4Arenas
 				info.DontBroadcast = true;
 				return HookResult.Changed;
 			}, HookMode.Pre);
+		}
+
+		private HookResult ListenerChangeLevel(CCSPlayerController? player, CommandInfo commandInfo)
+		{
+			try
+			{
+				WarmupTimer?.Kill();
+				WarmupTimer = null;
+
+				Arenas?.Clear();
+				Arenas = null;
+
+
+				Challenges.Clear();
+
+
+				WaitingArenaPlayers.Clear();
+				IsBetweenRounds = false;
+
+				gameRules = null;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[K4-Arenas] Error in OnMapEnd: {ex.Message}");
+			}
+			return HookResult.Continue;
 		}
 	}
 }
