@@ -2,7 +2,6 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Translations;
 using CounterStrikeSharp.API.Modules.Utils;
-using K4ArenaSharedApi;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
@@ -169,12 +168,8 @@ public class Arena
 
 				if (!Plugin.Config.CompatibilitySettings.DisableClantags)
 				{
-					Plugin.UpdatePlayerName(player.Controller, player.Controller.PlayerName, player.ArenaTag);
-
-					/*
 					player.Controller.Clan = player.ArenaTag;
 					Utilities.SetStateChanged(player.Controller, "CCSPlayerController", "m_szClan");
-					*/
 				}
 
 				if (player.Controller.Team > CsTeam.Spectator)

@@ -114,7 +114,7 @@
 
                     var validPlayers = Utilities.GetPlayers()
                         .Where(p => p?.IsValid == true && p.PlayerPawn?.IsValid == true && !p.IsBot && !p.IsHLTV && p.Connected == PlayerConnectedState.PlayerConnected);
-                        //.Where(p => p?.IsValid == true && p.PlayerPawn?.IsValid == true && !p.IsBot && !p.IsHLTV && p.Connected == PlayerConnectedState.PlayerConnected);
+
                     foreach (CCSPlayerController player in validPlayers)
                     {
                         string? requiredTag = GetRequiredTag(player);

@@ -2,7 +2,6 @@ namespace K4Arenas
 {
 	using CounterStrikeSharp.API.Core;
 	using K4Arenas.Models;
-	using K4ArenaSharedApi;
 	using System.Text.Json.Serialization;
 
 	public sealed class PluginConfig : BasePluginConfig
@@ -139,9 +138,6 @@ namespace K4Arenas
 	{
 		[JsonPropertyName("force-arena-clantags")]
 		public bool ForceArenaClantags { get; set; } = false;
-
-		[JsonPropertyName("refresh-tags-quicker")]
-		public bool RefreshTagsQuicker { get; set; } = false;
 
 		[JsonPropertyName("block-flash-of-not-opponent")]
 		public bool BlockFlashOfNotOpponent { get; set; } = false;

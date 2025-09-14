@@ -18,18 +18,19 @@
     </PackageReference>
     <PackageReference Include="Dapper" Version="*" />
     <PackageReference Include="MySqlConnector" Version="*" />
-    <ProjectReference Include="../src-shared/K4-ArenaSharedApi.csproj">
+    <Reference Include="K4ArenaSharedApi">
+      <HintPath>../src-shared/K4-ArenaSharedApi.dll</HintPath>
       <Private>false</Private>
-    </ProjectReference>
+    </Reference>
     <Reference Include="KitsuneMenu">
-      <HintPath>..\kitsunemenu\KitsuneMenu.dll</HintPath>
+      <HintPath>/Users/sples/Projects/CS2_Random/Menu-main/src/bin/KitsuneMenu/shared/KitsuneMenu/KitsuneMenu.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="CopyCustomFilesToPublishDirectory" AfterTargets="Publish">
     <Copy SourceFiles="$(ProjectDir)readme.txt" DestinationFolder="$(PublishDir)\" />
-    <Copy SourceFiles="$(ProjectDir)/../src-shared/K4-ArenaSharedApi.dll" DestinationFolder="$(PublishDir)../../shared/K4-ArenaSharedApi/" />
+    <Copy SourceFiles="$(ProjectDir)$(ReferencePath)../src-shared/K4-ArenaSharedApi.dll" DestinationFolder="$(PublishDir)../../shared/K4-ArenaSharedApi/" />
     <Copy SourceFiles="/Users/sples/Projects/CS2_Random/Menu-main/src/bin/KitsuneMenu/shared/KitsuneMenu/KitsuneMenu.dll" DestinationFolder="$(PublishDir)../../shared/KitsuneMenu/" OverwriteReadOnlyFiles="true" SkipUnchangedFiles="false" />
   </Target>
 </Project>
