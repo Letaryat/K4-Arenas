@@ -8,7 +8,7 @@ namespace K4Arenas
 
         public override string ModuleDescription => "An arena plugin for Counter-Strike2";
 
-        public override string ModuleAuthor => "K4ryuu";
+        public override string ModuleAuthor => "K4ryuu | Letaryat";
 
         public override string ModuleVersion => "2.0.7 " +
 #if RELEASE

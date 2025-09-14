@@ -1,4 +1,5 @@
 ﻿using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Modules.Entities.Constants;
 
 namespace K4ArenaSharedApi
 {
@@ -12,5 +13,6 @@ namespace K4ArenaSharedApi
 		public List<CCSPlayerController> FindOpponents(CCSPlayerController player);
 		public void TerminateRoundIfPossible();
 		public void PerformAFKAction(CCSPlayerController player, bool afk);
+		public Dictionary<string, CsItem?> GetPlayerWeaponPreferences(CCSPlayerController player);
 	}
 }

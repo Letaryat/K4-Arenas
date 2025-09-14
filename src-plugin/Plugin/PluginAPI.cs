@@ -3,7 +3,8 @@ namespace K4Arenas
 	using CounterStrikeSharp.API;
 	using CounterStrikeSharp.API.Core;
 	using CounterStrikeSharp.API.Core.Capabilities;
-	using CounterStrikeSharp.API.Modules.Utils;
+    using CounterStrikeSharp.API.Modules.Entities.Constants;
+    using CounterStrikeSharp.API.Modules.Utils;
 	using K4Arenas.Models;
 	using K4ArenaSharedApi;
 
@@ -112,5 +113,29 @@ namespace K4Arenas
 				}
 			}
 		}
+
+        public Dictionary<string, CsItem?> GetPlayerWeaponPreferences(CCSPlayerController player)
+        {
+            var arenaPlayer = plugin.Arenas?.FindPlayer(player);
+
+            if (arenaPlayer == null)
+            {
+                return new Dictionary<string, CsItem?>();
+            }
+
+            var playerWeapons = new Dictionary<string, CsItem?>()
+			{
+                { "Rifle", arenaPlayer.WeaponPreferences[WeaponType.Rifle] },
+                { "Sniper", arenaPlayer.WeaponPreferences[WeaponType.Sniper] },
+                { "SMG", arenaPlayer.WeaponPreferences[WeaponType.SMG] },
+                { "LMG", arenaPlayer.WeaponPreferences[WeaponType.LMG] },
+                { "Shotgun", arenaPlayer.WeaponPreferences[WeaponType.Shotgun] },
+                { "Pistol", arenaPlayer.WeaponPreferences[WeaponType.Pistol] },
+            };
+
+			return playerWeapons;
+        }
+
+
 	}
 }
