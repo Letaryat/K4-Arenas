@@ -82,6 +82,7 @@ namespace K4Arenas
 					Challenges.Clear();
 					lastRealPlayers = 0;
 					WarmupTimer?.Kill();
+
 				}
 				catch (Exception error)
 				{
