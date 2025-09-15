@@ -319,5 +319,16 @@ namespace K4Arenas
 				queue = new Queue<ArenaPlayer>(list);
 			}
 		}
+
+		public static void SetScoreTag(CCSPlayerController player, string? tag)
+		{
+			if (tag != null && player.Clan != tag)
+			{
+				player.Clan = tag;
+				Utilities.SetStateChanged(player, "CCSPlayerController", "m_szClan");
+				new EventNextlevelChanged(false).FireEventToClient(player);
+			}
+		}
+
 	}
 }
