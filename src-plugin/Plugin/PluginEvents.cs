@@ -290,8 +290,11 @@ namespace K4Arenas
 
 						if (!Config.CompatibilitySettings.DisableClantags)
 						{
+							SetScoreTag(player.Controller, player.ArenaTag);
+							/*
 							player.Controller.Clan = player.ArenaTag;
 							Utilities.SetStateChanged(player.Controller, "CCSPlayerController", "m_szClan");
+							*/
 						}
 
 						WaitingArenaPlayers.Enqueue(player);
@@ -356,8 +359,11 @@ namespace K4Arenas
 
 					if (!Config.CompatibilitySettings.DisableClantags)
 					{
+						SetScoreTag(arenaPlayer.Controller, arenaPlayer.ArenaTag);
+						/*
 						arenaPlayer.Controller.Clan = arenaPlayer.ArenaTag;
 						Utilities.SetStateChanged(arenaPlayer.Controller, "CCSPlayerController", "m_szClan");
+						*/
 					}
 
 					if (arenaPlayer.PlayerIsSafe)
@@ -437,8 +443,11 @@ namespace K4Arenas
 
 					if (!Config.CompatibilitySettings.DisableClantags)
 					{
+						SetScoreTag(player, arenaPlayer.ArenaTag);
+						/*
 						player.Clan = arenaPlayer.ArenaTag;
 						Utilities.SetStateChanged(player, "CCSPlayerController", "m_szClan");
+						*/
 					}
 
 					player!.ChangeTeam(CsTeam.Spectator);
@@ -454,8 +463,11 @@ namespace K4Arenas
 
 					if (!Config.CompatibilitySettings.DisableClantags)
 					{
+						SetScoreTag(arenaPlayer.Controller, arenaPlayer.ArenaTag);
+						/*
 						arenaPlayer.Controller.Clan = arenaPlayer.ArenaTag;
 						Utilities.SetStateChanged(arenaPlayer.Controller, "CCSPlayerController", "m_szClan");
+						*/
 					}
 
 					player.PrintToChat($" {Localizer.ForPlayer(player, "k4.general.prefix")} {Localizer.ForPlayer(player, "k4.chat.afk_disabled")}");

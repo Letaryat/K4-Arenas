@@ -168,8 +168,11 @@ public class Arena
 
 				if (!Plugin.Config.CompatibilitySettings.DisableClantags)
 				{
+					Plugin.SetScoreTag(player.Controller, player.ArenaTag);
+					/*
 					player.Controller.Clan = player.ArenaTag;
 					Utilities.SetStateChanged(player.Controller, "CCSPlayerController", "m_szClan");
+					*/
 				}
 
 				if (player.Controller.Team > CsTeam.Spectator)

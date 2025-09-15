@@ -75,8 +75,11 @@ namespace K4Arenas
 
 				if (!Config.CompatibilitySettings.DisableClantags)
 				{
+					SetScoreTag(playerController, arenaPlayer.ArenaTag);
+					/*
 					playerController.Clan = arenaPlayer.ArenaTag;
 					Utilities.SetStateChanged(playerController, "CCSPlayerController", "m_szClan");
+					*/
 				}
 
 				if (!arenaPlayer.Controller.IsBot)

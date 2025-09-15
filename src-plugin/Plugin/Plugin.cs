@@ -127,8 +127,11 @@
 
                             if (!Config.CompatibilitySettings.DisableClantags)
                             {
+                                SetScoreTag(player, arenaPlayer.ArenaTag);
+                                /*
                                 player.Clan = arenaPlayer.ArenaTag;
                                 Utilities.SetStateChanged(player, "CCSPlayerController", "m_szClan");
+                                */
                             }
                         }
                     }

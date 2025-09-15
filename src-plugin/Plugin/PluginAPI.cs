@@ -73,8 +73,11 @@ namespace K4Arenas
 
 				if (!plugin.Config.CompatibilitySettings.DisableClantags)
 				{
+					Plugin.SetScoreTag(player, arenaPlayer.ArenaTag);
+					/*
 					player.Clan = arenaPlayer.ArenaTag;
 					Utilities.SetStateChanged(player, "CCSPlayerController", "m_szClan");
+					*/
 				}
 			}
 			else
@@ -83,8 +86,11 @@ namespace K4Arenas
 
 				if (!plugin.Config.CompatibilitySettings.DisableClantags)
 				{
+					Plugin.SetScoreTag(arenaPlayer.Controller, arenaPlayer.ArenaTag);
+					/*
 					arenaPlayer.Controller.Clan = arenaPlayer.ArenaTag;
 					Utilities.SetStateChanged(arenaPlayer.Controller, "CCSPlayerController", "m_szClan");
+					*/
 				}
 			}
 		}
@@ -95,7 +101,7 @@ namespace K4Arenas
 
             if (arenaPlayer == null)
             {
-                return new Dictionary<string, CsItem?>(); // lub z domyœlnymi nullami jak ni¿ej
+                return new Dictionary<string, CsItem?>(); // lub z domyï¿½lnymi nullami jak niï¿½ej
             }
 
             var playerWeapons = new Dictionary<string, CsItem?>()
