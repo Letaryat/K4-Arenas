@@ -7,11 +7,10 @@ using Microsoft.Extensions.Logging;
 public class ArenaFinder
 {
 	public Plugin Plugin;
+	public readonly List<SpawnPoint> ctSpawns;
+	public readonly List<SpawnPoint> tSpawns;
 
-	private readonly List<SpawnPoint> ctSpawns;
-	private readonly List<SpawnPoint> tSpawns;
-
-	private readonly List<CInfoTeleportDestination> teleportDestinations;
+	public readonly List<CInfoTeleportDestination> teleportDestinations;
 
 	// ** FINE TUNE LOGIC ** //
 	private static readonly float MERGE_THRESHOLD = 1.5f;

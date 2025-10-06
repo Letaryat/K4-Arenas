@@ -1,10 +1,12 @@
 namespace K4Arenas
 {
+	using System;
 	using CounterStrikeSharp.API;
 	using CounterStrikeSharp.API.Core;
 	using CounterStrikeSharp.API.Modules.Commands;
 	using CounterStrikeSharp.API.Modules.Utils;
 	using K4Arenas.Models;
+	using Microsoft.Extensions.Logging;
 
 	public sealed partial class Plugin : BasePlugin
 	{
@@ -13,6 +15,11 @@ namespace K4Arenas
 			RegisterListener<Listeners.OnTick>(OnTick);
 
 			AddCommandListener("jointeam", ListenerJoinTeam);
+
+			AddCommandListener("changelevel", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("map", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("host_workshop_map", ListenerChangeLevel, HookMode.Pre);
+			AddCommandListener("ds_workshop_changelevel", ListenerChangeLevel, HookMode.Pre);
 		}
 
 		private void OnTick()
@@ -58,5 +65,26 @@ namespace K4Arenas
 
 			return HookResult.Continue;
 		}
+
+		private HookResult ListenerChangeLevel(CCSPlayerController? player, CommandInfo commandInfo)
+		{
+			Logger.LogInformation("ListenerChangeLevel - Clearing cache: spawning Lists");
+			ArenaFinderTest?.ctSpawns.Clear();
+			ArenaFinderTest?.tSpawns.Clear();
+			ArenaFinderTest?.teleportDestinations.Clear();
+			ArenaFinderTest = null;
+
+
+			gameRules = null;
+
+			Arenas?.Clear();
+			Arenas = null;
+
+			WaitingArenaPlayers.Clear();
+			IsBetweenRounds = false;
+
+			return HookResult.Continue;
+		}
+
 	}
 }

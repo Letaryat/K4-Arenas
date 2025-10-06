@@ -50,6 +50,8 @@
         public List<ChallengeModel> Challenges { get; set; } = [];
         public Arenas? Arenas { get; set; } = null;
 
+        public ArenaFinder? ArenaFinderTest { get; set; } = null;
+
         public CCSGameRules? gameRules = null;
         public Timer? WarmupTimer { get; set; } = null;
         public bool FlashFixFound { get; set; } = false;
@@ -91,6 +93,8 @@
                 lastRealPlayers = players.Count(p => !p.IsBot);
 
                 Arenas ??= new Arenas(this);
+
+                ArenaFinderTest ??= new ArenaFinder(this);
 
                 gameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").First().GameRules;
 

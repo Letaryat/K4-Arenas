@@ -68,6 +68,16 @@ namespace K4Arenas
 
 				WaitingArenaPlayers.Clear();
 				IsBetweenRounds = false;
+
+
+				ArenaFinderTest = null;
+				gameRules = null;
+				if (WarmupTimer != null)
+				{
+					WarmupTimer.Kill();
+				}
+
+
 			});
 
 			RegisterEventHandler((EventRoundFreezeEnd @event, GameEventInfo info) =>
@@ -84,7 +94,6 @@ namespace K4Arenas
 							AddTimer(3.0f, () => {
 								arenaPlayer.CenterMessage = string.Empty;
 							});
-							
 						}
 					}
 				}
