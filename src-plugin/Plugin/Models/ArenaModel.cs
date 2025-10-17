@@ -250,7 +250,14 @@ public class Arena
 				return;
 			}
 
-			Server.NextWorldUpdate(() => RoundType.StartFunction(team1, team2));
+			Plugin.Logger.LogInformation($"Test: {playerController.PlayerName} | {player.ArenaTag}");
+
+			Server.NextWorldUpdate(() =>
+            {
+				RoundType.StartFunction(team1, team2);
+				Plugin.SetScoreTag(playerController, player.ArenaTag);
+            }
+			);
 		}
 		else
 		{
