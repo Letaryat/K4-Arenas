@@ -17,7 +17,7 @@ public class Arena
 	public int ArenaID;
 	private int ArenaScore;
 	private RoundType RoundType;
-	public readonly Tuple<List<SpawnPoint>, List<SpawnPoint>> Spawns;
+	public Tuple<List<SpawnPoint>, List<SpawnPoint>> Spawns;
 	public ArenaResult Result = new ArenaResult(ArenaResultType.Empty, null, null);
 
 	//** ? Arena Players */
@@ -274,6 +274,7 @@ public class Arena
 			{
 				try
 				{
+
 					RoundType.StartFunction(team1, team2);
 				}
 				catch (Exception ex)

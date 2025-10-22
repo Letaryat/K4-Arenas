@@ -75,6 +75,8 @@ namespace K4Arenas
 			ArenaFinderTest = null;
 
 
+			Arenas?.ArenaList.Clear();
+
 			gameRules = null;
 
 			Arenas?.Clear();

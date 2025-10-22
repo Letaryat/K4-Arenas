@@ -51,8 +51,21 @@ namespace K4Arenas
 					{
 						var mpRoundRestartDelay = ConVar.Find("mp_round_restart_delay");
 						float delay = mpRoundRestartDelay != null ? mpRoundRestartDelay.GetPrimitiveValue<float>() : 3f;
-						//gameRules.TerminateRound(delay, tCount > ctCount ? RoundEndReason.TerroristsWin : ctCount > tCount ? RoundEndReason.CTsWin : RoundEndReason.RoundDraw);
-						gameRules.TerminateRound(delay, RoundEndReason.RoundDraw);
+						RoundEndReason reason;
+
+						if (tCount > ctCount)
+						{
+							reason = RoundEndReason.TerroristsWin;
+						}
+						else if (ctCount > tCount)
+						{
+							reason = RoundEndReason.CTsWin;
+						}
+						else // Equal alive counts
+						{
+							reason = RoundEndReason.RoundDraw;
+						}
+						gameRules.TerminateRound(delay, reason);
 					}
 					catch (Exception ex)
 					{

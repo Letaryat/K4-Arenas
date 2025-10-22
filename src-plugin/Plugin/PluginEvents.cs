@@ -5,9 +5,9 @@ namespace K4Arenas
 	using CounterStrikeSharp.API.Core.Translations;
 	using CounterStrikeSharp.API.Modules.Utils;
 	using K4Arenas.Models;
-    using Microsoft.Extensions.Logging;
+	using Microsoft.Extensions.Logging;
 
-    public sealed partial class Plugin : BasePlugin
+	public sealed partial class Plugin : BasePlugin
 	{
 		private int lastRealPlayers = 0;
 		public void Initialize_Events()
@@ -36,21 +36,35 @@ namespace K4Arenas
 
 			RegisterListener<Listeners.OnMapEnd>(() =>
 			{
-				Arenas?.Clear();
-				Arenas = null;
+				Logger.LogInformation("=== MAP END - Cleaning up ===");
 
-				WaitingArenaPlayers.Clear();
-				IsBetweenRounds = false;
+				// ✅ Kill wszystkie timery
+				WarmupTimer?.Kill();
+				WarmupTimer = null;
 
+				ArenaFinderTest?.ctSpawns.Clear();
+				ArenaFinderTest?.tSpawns.Clear();
+				ArenaFinderTest?.teleportDestinations.Clear();
 
-				ArenaFinderTest = null;
-				gameRules = null;
-				if (WarmupTimer != null)
+				// ✅ Wyczyść areny
+				if (Arenas != null)
 				{
-					WarmupTimer.Kill();
+
+					foreach (var arena in Arenas.ArenaList)
+					{
+						arena.Team1?.Clear();
+						arena.Team2?.Clear();
+					}
+					Arenas.Clear();
+					Arenas = null;
 				}
 
+				// ✅ Wyczyść kolejki
+				WaitingArenaPlayers.Clear();
+				Challenges.Clear();
+				IsBetweenRounds = false;
 
+				Logger.LogInformation("Map end cleanup completed");
 			});
 
 			RegisterEventHandler((EventRoundFreezeEnd @event, GameEventInfo info) =>
@@ -106,8 +120,30 @@ namespace K4Arenas
 				if (playerController is null || !playerController.IsValid)
 					return HookResult.Continue;
 
-				WaitingArenaPlayers = new Queue<ArenaPlayer>(WaitingArenaPlayers.Where(p => p.Controller != playerController));
+				ulong steamId = playerController.SteamID;
+
+				// ✅ Usuń po SteamID
+				var playersToRemove = WaitingArenaPlayers.Where(p => p.SteamID == steamId).ToList();
+				foreach (var player in playersToRemove)
+				{
+					var tempQueue = new Queue<ArenaPlayer>();
+					while (WaitingArenaPlayers.Count > 0)
+					{
+						var p = WaitingArenaPlayers.Dequeue();
+						if (p.SteamID != steamId)
+							tempQueue.Enqueue(p);
+					}
+					WaitingArenaPlayers = tempQueue;
+				}
+
+				// ✅ Usuń z aren
 				Arenas?.ArenaList.ForEach(arena => arena.RemovePlayer(playerController));
+
+				TerminateRoundIfPossible();
+
+				// ✅ Usuń z challenges
+				Challenges.RemoveAll(c => c.Player1.SteamID == steamId || c.Player2.SteamID == steamId);
+
 				return HookResult.Continue;
 			});
 
@@ -405,14 +441,6 @@ namespace K4Arenas
 
 			RegisterEventHandler((EventRoundStart @event, GameEventInfo info) =>
 			{
-				Logger.LogInformation("=== RoundStart ===");
-				if(Arenas != null)
-                {
-                    foreach(var arena in Arenas.ArenaList)
-                    {
-						Logger.LogInformation($"Arena {arena.ArenaID} | Team1: {arena.Team1!.Count()} Team2 {arena.Team2!.Count()}");
-                    }
-                }
 				IsBetweenRounds = false;
 				return HookResult.Continue;
 			});
@@ -456,6 +484,8 @@ namespace K4Arenas
 				// ✅ Setup tylko jeśli gracz jest w arenie
 				if (playerArena != null)
 					playerArena.SetupArenaPlayer(player);
+
+				SetScoreTag(player, GetRequiredTag(player));
 
 				return HookResult.Continue;
 			});
