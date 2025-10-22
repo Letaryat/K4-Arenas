@@ -74,10 +74,6 @@ namespace K4Arenas
 				if (!plugin.Config.CompatibilitySettings.DisableClantags)
 				{
 					Plugin.SetScoreTag(player, arenaPlayer.ArenaTag);
-					/*
-					player.Clan = arenaPlayer.ArenaTag;
-					Utilities.SetStateChanged(player, "CCSPlayerController", "m_szClan");
-					*/
 				}
 			}
 			else
@@ -87,35 +83,57 @@ namespace K4Arenas
 				if (!plugin.Config.CompatibilitySettings.DisableClantags)
 				{
 					Plugin.SetScoreTag(arenaPlayer.Controller, arenaPlayer.ArenaTag);
-					/*
-					arenaPlayer.Controller.Clan = arenaPlayer.ArenaTag;
-					Utilities.SetStateChanged(arenaPlayer.Controller, "CCSPlayerController", "m_szClan");
-					*/
 				}
 			}
 		}
 
-        public Dictionary<string, CsItem?> GetPlayerWeaponPreferences(CCSPlayerController player)
-        {
-            var arenaPlayer = plugin.Arenas?.FindPlayer(player);
+		public Dictionary<string, CsItem?> GetPlayerWeaponPreferences(CCSPlayerController player)
+		{
+			var arenaPlayer = plugin.Arenas?.FindPlayer(player);
 
-            if (arenaPlayer == null)
-            {
-                return new Dictionary<string, CsItem?>(); // lub z domy�lnymi nullami jak ni�ej
-            }
-
-            var playerWeapons = new Dictionary<string, CsItem?>()
+			if (arenaPlayer == null)
 			{
-                { "Rifle", arenaPlayer.WeaponPreferences[WeaponType.Rifle] },
-                { "Sniper", arenaPlayer.WeaponPreferences[WeaponType.Sniper] },
-                { "SMG", arenaPlayer.WeaponPreferences[WeaponType.SMG] },
-                { "LMG", arenaPlayer.WeaponPreferences[WeaponType.LMG] },
-                { "Shotgun", arenaPlayer.WeaponPreferences[WeaponType.Shotgun] },
-                { "Pistol", arenaPlayer.WeaponPreferences[WeaponType.Pistol] },
-            };
+				return new Dictionary<string, CsItem?>();
+			}
+
+			var playerWeapons = new Dictionary<string, CsItem?>()
+			{
+				{ "Rifle", arenaPlayer.WeaponPreferences[WeaponType.Rifle] },
+				{ "Sniper", arenaPlayer.WeaponPreferences[WeaponType.Sniper] },
+				{ "SMG", arenaPlayer.WeaponPreferences[WeaponType.SMG] },
+				{ "LMG", arenaPlayer.WeaponPreferences[WeaponType.LMG] },
+				{ "Shotgun", arenaPlayer.WeaponPreferences[WeaponType.Shotgun] },
+				{ "Pistol", arenaPlayer.WeaponPreferences[WeaponType.Pistol] },
+			};
 
 			return playerWeapons;
-        }
+		}
 
-    }
+		public bool IsAFK(CCSPlayerController player)
+		{
+			var arenaPlayer = plugin.Arenas?.FindPlayer(player);
+			if (arenaPlayer is not null)
+			{
+				return arenaPlayer.AFK;
+			}
+			return false;
+		}
+
+		public List<CCSPlayerController> FindOpponents(CCSPlayerController player)
+		{
+			var arenaOpponents = plugin.Arenas?.FindOpponents(player);
+			if (arenaOpponents is not null)
+			{
+				return arenaOpponents;
+			}
+			return new List<CCSPlayerController>();
+		}
+
+		public void TerminateRoundIfPossible()
+		{
+			plugin.TerminateRoundIfPossible();
+		}
+
+
+	}
 }

@@ -11,6 +11,11 @@ namespace K4ArenaSharedApi
 		public string GetArenaName(CCSPlayerController player);
 		public void PerformAFKAction(CCSPlayerController player, bool afk);
 
+		public bool IsAFK(CCSPlayerController player);
+
+		public List<CCSPlayerController> FindOpponents(CCSPlayerController player);
+
+		public void TerminateRoundIfPossible();
 		public Dictionary<string, CsItem?> GetPlayerWeaponPreferences(CCSPlayerController player);
     }
 }

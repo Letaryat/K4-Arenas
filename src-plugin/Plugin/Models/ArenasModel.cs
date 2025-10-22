@@ -36,7 +36,6 @@ public class Arenas
 
 		return allPlayers.FirstOrDefault(p => p.Controller == player);
 	}
-
 	public ArenaPlayer? FindPlayer(ulong steamId)
 	{
 		IEnumerable<ArenaPlayer> allPlayers = Plugin.WaitingArenaPlayers
@@ -44,6 +43,25 @@ public class Arenas
 			.Concat(ArenaList.SelectMany(x => x.Team2 ?? Enumerable.Empty<ArenaPlayer>()));
 
 		return allPlayers.FirstOrDefault(p => p.SteamID == steamId);
+	}
+	public List<CCSPlayerController> FindOpponents(CCSPlayerController? player)
+	{
+		var arenaPlayer = FindPlayer(player);
+
+		if (arenaPlayer is null)
+			return new List<CCSPlayerController>();
+
+		var arenaID = Plugin.GetPlayerArenaID(arenaPlayer);
+
+		if(arenaID < 0)
+			return new List<CCSPlayerController>();
+
+		var arena = ArenaList.FirstOrDefault(a => a.ArenaID == arenaID);
+		if (arena == null)
+			return new List<CCSPlayerController>();
+
+		var opponents = arena.Team1?.Any(p => p.Controller == player) == true ? arena.Team2 : arena.Team1;
+		return opponents?.Select(p => p.Controller).ToList() ?? new List<CCSPlayerController>();
 	}
 
 	public bool AddTeamsToArena(int arenaID, int displayID, int teamSize, Queue<ArenaPlayer> notAFKrankedPlayers, RoundType checkType)

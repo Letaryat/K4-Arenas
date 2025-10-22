@@ -13,6 +13,8 @@ public class Arena
 	private readonly Plugin Plugin;
 	private readonly IStringLocalizer Localizer;
 
+	public List<Arena> ArenaList { get; set; } = [];
+
 	//** ? Arena Main Details */
 	public int ArenaID;
 	private int ArenaScore;
@@ -39,6 +41,35 @@ public class Arena
 
 	public bool HasRealPlayers
 		=> Team1?.Any(p => p.IsValid && !p.Controller.IsBot) == true || Team2?.Any(p => p.IsValid && !p.Controller.IsBot) == true;
+
+
+	public ArenaPlayer? FindPlayer(CCSPlayerController? player)
+	{
+		IEnumerable<ArenaPlayer> allPlayers = Plugin.WaitingArenaPlayers
+			.Concat(ArenaList.SelectMany(x => x.Team1 ?? Enumerable.Empty<ArenaPlayer>()))
+			.Concat(ArenaList.SelectMany(x => x.Team2 ?? Enumerable.Empty<ArenaPlayer>()));
+
+		return allPlayers.FirstOrDefault(p => p.Controller == player);
+	}
+	public List<CCSPlayerController> FindOpponents(CCSPlayerController? player)
+	{
+		var arenaPlayer = FindPlayer(player);
+
+		if (arenaPlayer is null)
+			return new List<CCSPlayerController>();
+
+		var arenaID = Plugin.GetPlayerArenaID(arenaPlayer);
+
+		if (arenaID < 0)
+			return new List<CCSPlayerController>();
+
+		var arena = ArenaList.FirstOrDefault(a => a.ArenaID == arenaID);
+		if (arena == null)
+			return new List<CCSPlayerController>();
+
+		var opponents = arena.Team1?.Any(p => p.Controller == player) == true ? arena.Team2 : arena.Team1;
+		return opponents?.Select(p => p.Controller).ToList() ?? new List<CCSPlayerController>();
+	}
 
 	public void AddChallengePlayers(List<ArenaPlayer> team1, List<ArenaPlayer> team2)
 	{
@@ -370,4 +401,5 @@ public class Arena
 			}
 		}
 	}
+
 }
