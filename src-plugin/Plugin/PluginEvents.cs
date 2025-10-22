@@ -5,8 +5,9 @@ namespace K4Arenas
 	using CounterStrikeSharp.API.Core.Translations;
 	using CounterStrikeSharp.API.Modules.Utils;
 	using K4Arenas.Models;
+    using Microsoft.Extensions.Logging;
 
-	public sealed partial class Plugin : BasePlugin
+    public sealed partial class Plugin : BasePlugin
 	{
 		private int lastRealPlayers = 0;
 		public void Initialize_Events()
@@ -63,7 +64,8 @@ namespace K4Arenas
 						ArenaPlayer? arenaPlayer = Arenas?.FindPlayer(player);
 						if (arenaPlayer != null)
 						{
-							AddTimer(3.0f, () => {
+							AddTimer(3.0f, () =>
+							{
 								arenaPlayer.CenterMessage = string.Empty;
 							});
 						}
@@ -169,15 +171,27 @@ namespace K4Arenas
 				if (gameRules == null || gameRules.WarmupPeriod || Arenas == null)
 					return HookResult.Continue;
 
-				Queue<ArenaPlayer> arenaWinners = new();
-				Queue<ArenaPlayer> arenaLosers = new();
+				// === OPTYMALIZACJA 1: Użyj List zamiast Queue dla lepszej wydajności ===
+				var arenaWinners = new List<ArenaPlayer>();
+				var arenaLosers = new List<ArenaPlayer>();
+				var challengesToRemove = new List<ChallengeModel>();
 
-				foreach (Arena arena in Arenas.ArenaList.OrderBy(a => a.ArenaID < 0).ThenBy(a => Math.Abs(a.ArenaID)))
+				// === OPTYMALIZACJA 2: Posortuj raz, użyj ToList() aby uniknąć re-sortowania ===
+				var sortedArenas = Arenas.ArenaList
+					.OrderBy(a => a.ArenaID < 0)
+					.ThenBy(a => Math.Abs(a.ArenaID))
+					.ToList();
+
+				foreach (Arena arena in sortedArenas)
 				{
 					if (arena.ArenaID == -2)
 					{
-						var arenaPlayers = arena.Team1?.Concat(arena.Team2 ?? []);
-						if (arenaPlayers == null || !arenaPlayers.Any())
+						// === OPTYMALIZACJA 3: Przechowuj arenaPlayers w jednej kolekcji ===
+						var arenaPlayers = new List<ArenaPlayer>();
+						if (arena.Team1 != null) arenaPlayers.AddRange(arena.Team1);
+						if (arena.Team2 != null) arenaPlayers.AddRange(arena.Team2);
+
+						if (arenaPlayers.Count == 0)
 							continue;
 
 						foreach (var player in arenaPlayers)
@@ -185,19 +199,26 @@ namespace K4Arenas
 							ChallengeModel? challenge = FindChallengeForPlayer(player.Controller);
 							if (challenge is null)
 							{
-								arenaLosers.Enqueue(player);
+								arenaLosers.Add(player);
 								continue;
 							}
 
 							ArenaResult result = arena.Result;
 
-							var player1 = challenge.Player1;
-							var player2 = challenge.Player2;
+							// === OPTYMALIZACJA 4: Użyj HashSet dla O(1) lookup ===
+							var winnersSet = result.Winners != null ? new HashSet<ArenaPlayer>(result.Winners) : null;
 
-							MoveBackChallengePlayer(player1, challenge.Player1Placement, ref result.Winners?.Contains(player1) == true ? ref arenaWinners : ref arenaLosers);
-							MoveBackChallengePlayer(player2, challenge.Player2Placement, ref result.Winners?.Contains(player2) == true ? ref arenaWinners : ref arenaLosers);
+							if (winnersSet?.Contains(challenge.Player1) == true)
+								MoveBackChallengePlayer(challenge.Player1, challenge.Player1Placement, arenaWinners);
+							else
+								MoveBackChallengePlayer(challenge.Player1, challenge.Player1Placement, arenaLosers);
 
-							Challenges.Remove(challenge);
+							if (winnersSet?.Contains(challenge.Player2) == true)
+								MoveBackChallengePlayer(challenge.Player2, challenge.Player2Placement, arenaWinners);
+							else
+								MoveBackChallengePlayer(challenge.Player2, challenge.Player2Placement, arenaLosers);
+
+							challengesToRemove.Add(challenge);
 						}
 					}
 					else
@@ -207,61 +228,70 @@ namespace K4Arenas
 						switch (arenaResult.ResultType)
 						{
 							case ArenaResultType.Win:
-								EnqueueTeamPlayers(arenaResult.Winners, arenaWinners);
-								EnqueueTeamPlayers(arenaResult.Losers, arenaLosers);
+								if (arenaResult.Winners != null) arenaWinners.AddRange(arenaResult.Winners);
+								if (arenaResult.Losers != null) arenaLosers.AddRange(arenaResult.Losers);
 								break;
 							case ArenaResultType.NoOpponent:
-								EnqueueTeamPlayers(arenaResult.Winners, arenaWinners);
+								if (arenaResult.Winners != null) arenaWinners.AddRange(arenaResult.Winners);
 								break;
 							case ArenaResultType.Tie:
-								if (arena.Team1?.All(p => p.Controller.IsBot) == true && arena.Team2?.All(p => p.Controller.IsBot) == true)
+								if (arena.Team1?.All(p => p.Controller.IsBot) == true &&
+									arena.Team2?.All(p => p.Controller.IsBot) == true)
 								{
 									var (winners, losers) = Random.Shared.Next(2) == 0
 										? (arena.Team1, arena.Team2)
 										: (arena.Team2, arena.Team1);
 
-									EnqueueTeamPlayers(winners, arenaWinners);
-									EnqueueTeamPlayers(losers, arenaLosers);
+									arenaWinners.AddRange(winners);
+									arenaLosers.AddRange(losers);
 								}
 								else
 								{
-									EnqueueTeamPlayers(arena.Team1, arenaLosers);
-									EnqueueTeamPlayers(arena.Team2, arenaLosers);
+									if (arena.Team1 != null) arenaLosers.AddRange(arena.Team1);
+									if (arena.Team2 != null) arenaLosers.AddRange(arena.Team2);
 								}
 								break;
 						}
 					}
 				}
 
+				// === OPTYMALIZACJA 5: Usuń po iteracji, nie podczas ===
+				foreach (var challenge in challengesToRemove)
+					Challenges.Remove(challenge);
+
 				Challenges.RemoveAll(c => c.IsEnded || !c.IsAccepted);
 
-				Queue<ArenaPlayer> rankedPlayers = new Queue<ArenaPlayer>();
+				// === OPTYMALIZACJA 6: Zbuduj rankedPlayers bez nadmiernych kopii ===
+				var rankedPlayers = new List<ArenaPlayer>();
 
 				if (arenaWinners.Count > 1)
 				{
-					rankedPlayers.Enqueue(arenaWinners.Dequeue());
-					rankedPlayers.Enqueue(arenaWinners.Dequeue());
+					rankedPlayers.Add(arenaWinners[0]);
+					rankedPlayers.Add(arenaWinners[1]);
+					arenaWinners.RemoveRange(0, 2);
 				}
 
-				while (arenaWinners.Count > 0)
+				// Przeplataj zwycięzców i przegranych
+				int winnerIdx = 0, loserIdx = 0;
+				while (winnerIdx < arenaWinners.Count || loserIdx < arenaLosers.Count)
 				{
-					rankedPlayers.Enqueue(arenaWinners.Dequeue());
+					if (winnerIdx < arenaWinners.Count)
+						rankedPlayers.Add(arenaWinners[winnerIdx++]);
 
-					if (arenaLosers.Count > 0)
-					{
-						rankedPlayers.Enqueue(arenaLosers.Dequeue());
-					}
+					if (loserIdx < arenaLosers.Count)
+						rankedPlayers.Add(arenaLosers[loserIdx++]);
 				}
 
-				MoveQueue(arenaLosers, rankedPlayers);
-				MoveQueue(WaitingArenaPlayers, rankedPlayers);
+				// Dodaj oczekujących graczy
+				rankedPlayers.AddRange(WaitingArenaPlayers);
 
 				Arenas.Shuffle();
 
-				Queue<ArenaPlayer> notAFKrankedPlayers = new Queue<ArenaPlayer>();
+				// === OPTYMALIZACJA 7: Filtruj tylko raz ===
+				var notAFKrankedPlayers = new List<ArenaPlayer>();
+				var newWaitingPlayers = new List<ArenaPlayer>();
 
-				IEnumerable<ArenaPlayer> validPlayers = rankedPlayers.Where(p => p.IsValid);
-				foreach (ArenaPlayer player in validPlayers)
+				foreach (ArenaPlayer player in rankedPlayers.Where(p => p.IsValid))
 				{
 					if (player.AFK)
 					{
@@ -272,44 +302,52 @@ namespace K4Arenas
 						if (!Config.CompatibilitySettings.DisableClantags)
 						{
 							SetScoreTag(player.Controller, player.ArenaTag);
-							/*
-							player.Controller.Clan = player.ArenaTag;
-							Utilities.SetStateChanged(player.Controller, "CCSPlayerController", "m_szClan");
-							*/
 						}
 
-						WaitingArenaPlayers.Enqueue(player);
+						newWaitingPlayers.Add(player);
 					}
 					else
-						notAFKrankedPlayers.Enqueue(player);
+					{
+						notAFKrankedPlayers.Add(player);
+					}
 				}
 
 				bool anyTeamRoundTypes = RoundType.RoundTypes.Any(roundType => roundType.TeamSize > 1);
 
-				// ? Prioritize real players over bots
-				notAFKrankedPlayers = new Queue<ArenaPlayer>(notAFKrankedPlayers.OrderBy(p => p.Controller.IsBot));
+				// === OPTYMALIZACJA 8: Sortuj raz, nie twórz nowej Queue ===
+				notAFKrankedPlayers.Sort((a, b) => a.Controller.IsBot.CompareTo(b.Controller.IsBot));
 
+				// === OPTYMALIZACJA 9: Usuń invalid challenges przed pętlą ===
 				Challenges.RemoveAll(c => !c.Player1.IsValid || !c.Player2.IsValid);
 
 				int displayIndex = 1;
-				int handledChallanges = 0;
+				int handledChallenges = 0;
+
+				// === OPTYMALIZACJA 10: Użyj HashSet dla szybszego Except ===
+				var usedPlayers = new HashSet<ArenaPlayer>();
+
 				for (int arenaID = 0; arenaID < Arenas.Count; arenaID++)
 				{
-					if (Challenges.Count > handledChallanges)
+					if (Challenges.Count > handledChallenges)
 					{
-						ChallengeModel challenge = Challenges[handledChallanges];
+						ChallengeModel challenge = Challenges[handledChallenges];
 
 						List<ArenaPlayer> team1 = [challenge.Player1];
 						List<ArenaPlayer> team2 = [challenge.Player2];
 
-						notAFKrankedPlayers = new Queue<ArenaPlayer>(notAFKrankedPlayers.Except(team1.Concat(team2)));
+						usedPlayers.Add(challenge.Player1);
+						usedPlayers.Add(challenge.Player2);
 
-						handledChallanges++;
+						handledChallenges++;
 						Arenas.ArenaList[arenaID].AddChallengePlayers(team1, team2);
 						continue;
 					}
 
-					if (anyTeamRoundTypes && RoundType.RoundTypes.Where(roundType => roundType.TeamSize > 1).Any(roundType => Arenas.AddTeamsToArena(arenaID, displayIndex, roundType.TeamSize, notAFKrankedPlayers, roundType)))
+					// Usuń użytych graczy
+					notAFKrankedPlayers.RemoveAll(p => usedPlayers.Contains(p));
+					usedPlayers.Clear();
+
+					if (anyTeamRoundTypes && RoundType.RoundTypes.Where(roundType => roundType.TeamSize > 1).Any(roundType => Arenas.AddTeamsToArena(arenaID, displayIndex, roundType.TeamSize, new Queue<ArenaPlayer>(notAFKrankedPlayers), roundType)))
 					{
 						displayIndex++;
 						continue;
@@ -317,8 +355,15 @@ namespace K4Arenas
 
 					if (notAFKrankedPlayers.Count >= 1)
 					{
-						ArenaPlayer player1 = notAFKrankedPlayers.Dequeue();
-						notAFKrankedPlayers.TryDequeue(out ArenaPlayer? player2);
+						ArenaPlayer player1 = notAFKrankedPlayers[0];
+						notAFKrankedPlayers.RemoveAt(0);
+
+						ArenaPlayer? player2 = null;
+						if (notAFKrankedPlayers.Count > 0)
+						{
+							player2 = notAFKrankedPlayers[0];
+							notAFKrankedPlayers.RemoveAt(0);
+						}
 
 						RoundType roundType = GetCommonRoundType(player1.RoundPreferences, player2?.RoundPreferences, false);
 
@@ -332,25 +377,27 @@ namespace K4Arenas
 					}
 				}
 
-				while (notAFKrankedPlayers.Count > 0)
-				{
-					ArenaPlayer arenaPlayer = notAFKrankedPlayers.Dequeue();
+				// === OPTYMALIZACJA 11: Przepisz WaitingArenaPlayers raz ===
+				WaitingArenaPlayers.Clear();
 
-					arenaPlayer.ArenaTag = $"{Localizer["k4.general.waiting"]} |";
+				foreach (var player in notAFKrankedPlayers)
+				{
+					player.ArenaTag = $"{Localizer["k4.general.waiting"]} |";
 
 					if (!Config.CompatibilitySettings.DisableClantags)
 					{
-						SetScoreTag(arenaPlayer.Controller, arenaPlayer.ArenaTag);
-						/*
-						arenaPlayer.Controller.Clan = arenaPlayer.ArenaTag;
-						Utilities.SetStateChanged(arenaPlayer.Controller, "CCSPlayerController", "m_szClan");
-						*/
+						SetScoreTag(player.Controller, player.ArenaTag);
 					}
 
-					if (arenaPlayer.PlayerIsSafe)
-						arenaPlayer.Controller.ChangeTeam(CsTeam.Spectator);
+					if (player.PlayerIsSafe)
+						player.Controller.ChangeTeam(CsTeam.Spectator);
 
-					WaitingArenaPlayers.Enqueue(arenaPlayer);
+					WaitingArenaPlayers.Enqueue(player);
+				}
+
+				foreach (var player in newWaitingPlayers)
+				{
+					WaitingArenaPlayers.Enqueue(player);
 				}
 
 				return HookResult.Continue;
@@ -358,6 +405,14 @@ namespace K4Arenas
 
 			RegisterEventHandler((EventRoundStart @event, GameEventInfo info) =>
 			{
+				Logger.LogInformation("=== RoundStart ===");
+				if(Arenas != null)
+                {
+                    foreach(var arena in Arenas.ArenaList)
+                    {
+						Logger.LogInformation($"Arena {arena.ArenaID} | Team1: {arena.Team1!.Count()} Team2 {arena.Team2!.Count()}");
+                    }
+                }
 				IsBetweenRounds = false;
 				return HookResult.Continue;
 			});
@@ -380,10 +435,27 @@ namespace K4Arenas
 				if (Arenas is null)
 					return HookResult.Continue;
 
+				CCSPlayerController? player = @event.Userid;
+				if (player == null || !player.IsValid)
+					return HookResult.Continue;
+
+				// ✅ Znajdź TYLKO arenę tego gracza
+				Arena? playerArena = null;
 				foreach (Arena arena in Arenas.ArenaList)
-					arena.SetupArenaPlayer(@event.Userid);
+				{
+					bool inTeam1 = arena.Team1?.Any(p => p.Controller == player) == true;
+					bool inTeam2 = arena.Team2?.Any(p => p.Controller == player) == true;
 
+					if (inTeam1 || inTeam2)
+					{
+						playerArena = arena;
+						break;
+					}
+				}
 
+				// ✅ Setup tylko jeśli gracz jest w arenie
+				if (playerArena != null)
+					playerArena.SetupArenaPlayer(player);
 
 				return HookResult.Continue;
 			});

@@ -310,18 +310,10 @@ namespace K4Arenas
 			return Challenges.FirstOrDefault(c => c.Player1.Controller == player || c.Player2.Controller == player);
 		}
 
-		public void MoveBackChallengePlayer(ArenaPlayer player, int placement, ref Queue<ArenaPlayer> queue)
+		public void MoveBackChallengePlayer(ArenaPlayer player, int placement, List<ArenaPlayer> queue)
 		{
-			if (placement > queue.Count)
-			{
-				queue.Enqueue(player);
-			}
-			else
-			{
-				var list = queue.ToList();
-				list.Insert(Math.Max(0, placement - 1), player);
-				queue = new Queue<ArenaPlayer>(list);
-			}
+			if (player?.IsValid == true)
+				queue.Add(player);
 		}
 
 		public static void SetScoreTag(CCSPlayerController player, string? tag)

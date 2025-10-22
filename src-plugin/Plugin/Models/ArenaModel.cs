@@ -217,14 +217,21 @@ public class Arena
 			.Concat(Team2 ?? Enumerable.Empty<ArenaPlayer>())
 			.FirstOrDefault(p => p.IsValid && p.Controller == playerController);
 
-		if (player?.IsValid != true || player.Controller.PlayerPawn.Value == null)
+		// ✅ Sprawdź wszystkie warunki
+		if (player?.IsValid != true)
 			return;
+
+		if (player.Controller.PlayerPawn.Value == null || !player.Controller.PlayerPawn.Value.IsValid)
+		{
+			Plugin.Logger.LogWarning($"PlayerPawn is null or invalid for {player.Controller.PlayerName}");
+			return;
+		}
 
 		SpawnPoint? playerSpawn = player.SpawnPoint;
 
-		if (playerSpawn == null)
+		if (playerSpawn == null || !playerSpawn.IsValid)
 		{
-			Plugin.Logger.LogError($"Cannot spawn {player.Controller.PlayerName} because the spawn point is null");
+			Plugin.Logger.LogError($"Cannot spawn {player.Controller.PlayerName} - spawn point is null or invalid");
 			return;
 		}
 
@@ -232,17 +239,29 @@ public class Arena
 		QAngle? angle = playerSpawn.AbsRotation;
 
 		if (pos == null || angle == null)
+		{
+			Plugin.Logger.LogError($"Cannot spawn {player.Controller.PlayerName} - spawn position/angle is null");
 			return;
+		}
 
 		Vector velocity = new Vector(0, 0, 0);
 
-		player.Controller.PlayerPawn.Value.Teleport(pos, angle, velocity);
-		player.Controller.PlayerPawn.Value.Health = 100;
+		// ✅ Opakuj w try-catch dla bezpieczeństwa
+		try
+		{
+			player.Controller.PlayerPawn.Value.Teleport(pos, angle, velocity);
+			player.Controller.PlayerPawn.Value.Health = 100;
+		}
+		catch (Exception ex)
+		{
+			Plugin.Logger.LogError($"Failed to teleport {player.Controller.PlayerName}: {ex.Message}");
+			return;
+		}
 
 		if (RoundType.StartFunction != null)
 		{
-			List<CCSPlayerController>? team1 = Team1?.Select(p => p.Controller).Where(c => c != null).ToList();
-			List<CCSPlayerController>? team2 = Team2?.Select(p => p.Controller).Where(c => c != null).ToList();
+			List<CCSPlayerController>? team1 = Team1?.Select(p => p.Controller).Where(c => c?.IsValid == true).ToList();
+			List<CCSPlayerController>? team2 = Team2?.Select(p => p.Controller).Where(c => c?.IsValid == true).ToList();
 
 			if (team1 == null && team2 == null)
 			{
@@ -250,14 +269,18 @@ public class Arena
 				return;
 			}
 
-			Plugin.Logger.LogInformation($"Test: {playerController.PlayerName} | {player.ArenaTag}");
-
-			Server.NextWorldUpdate(() =>
-            {
-				RoundType.StartFunction(team1, team2);
-				Plugin.SetScoreTag(playerController, player.ArenaTag);
-            }
-			);
+			// ✅ Używaj Server.NextFrame zamiast NextWorldUpdate
+			Server.NextFrame(() =>
+			{
+				try
+				{
+					RoundType.StartFunction(team1, team2);
+				}
+				catch (Exception ex)
+				{
+					Plugin.Logger.LogError($"StartFunction failed: {ex.Message}");
+				}
+			});
 		}
 		else
 		{

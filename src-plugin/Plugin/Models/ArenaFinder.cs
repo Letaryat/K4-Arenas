@@ -107,31 +107,61 @@ public class ArenaFinder
 
 			foreach (var ctTeleport in pair.Item1)
 			{
+				// ✅ ZACHOWAJ dane PRZED usunięciem
+				Vector? savedOrigin = ctTeleport.AbsOrigin;
+				QAngle? savedRotation = ctTeleport.AbsRotation;
+
+				if (savedOrigin == null || savedRotation == null)
+				{
+					Plugin.Logger.LogWarning("Teleport has null origin or rotation, skipping");
+					continue;
+				}
+
 				ctTeleport.Remove();
 
 				SpawnPoint? entity = Utilities.CreateEntityByName<SpawnPoint>("info_player_counterterrorist");
 				if (entity is null)
+				{
+					Plugin.Logger.LogError("Failed to create CT spawn point!");
 					continue;
+				}
 
-				entity.Teleport(ctTeleport.AbsOrigin, ctTeleport.AbsRotation);
+				// ✅ Użyj zachowanych danych
+				entity.Teleport(savedOrigin, savedRotation);
 				entity.DispatchSpawn();
 				ctSpawnList.Add(entity);
 			}
 
 			foreach (var tTeleport in pair.Item2)
 			{
+				// ✅ ZACHOWAJ dane PRZED usunięciem
+				Vector? savedOrigin = tTeleport.AbsOrigin;
+				QAngle? savedRotation = tTeleport.AbsRotation;
+
+				if (savedOrigin == null || savedRotation == null)
+				{
+					Plugin.Logger.LogWarning("Teleport has null origin or rotation, skipping");
+					continue;
+				}
+
 				tTeleport.Remove();
 
 				SpawnPoint? entity = Utilities.CreateEntityByName<SpawnPoint>("info_player_terrorist");
 				if (entity is null)
+				{
+					Plugin.Logger.LogError("Failed to create T spawn point!");
 					continue;
+				}
 
-				entity.Teleport(tTeleport.AbsOrigin, tTeleport.AbsRotation);
+				// ✅ Użyj zachowanych danych
+				entity.Teleport(savedOrigin, savedRotation);
 				entity.DispatchSpawn();
 				tSpawnList.Add(entity);
 			}
 
-			spawnPairs.Add(Tuple.Create(ctSpawnList, tSpawnList));
+			// ✅ Dodaj tylko jeśli oba teamy mają spawny
+			if (ctSpawnList.Count > 0 && tSpawnList.Count > 0)
+				spawnPairs.Add(Tuple.Create(ctSpawnList, tSpawnList));
 		}
 
 		return spawnPairs;
